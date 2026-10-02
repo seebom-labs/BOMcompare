@@ -3,7 +3,7 @@ package compare
 import (
 	"testing"
 
-	"github.com/seebom-labs/BOMHort/BOMcompare/pkg/sbom"
+	"github.com/seebom-labs/BOMcompare/pkg/sbom"
 )
 
 // load is a test helper that parses a fixture and fails on error.

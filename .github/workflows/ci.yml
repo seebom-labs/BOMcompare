@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Test (Go ${{ matrix.name }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: minimum (go.mod)
+            go-version-file: go.mod
+          - name: stable
+            go-version: stable
+            dist: true
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: ${{ matrix.go-version }}
+          go-version-file: ${{ matrix.go-version-file }}
+          cache: false # stdlib only, nothing to cache
+
+      - name: Lint (gofmt + vet)
+        run: make lint
+
+      - name: Test
+        run: make test
+
+      - name: Cross-compile release archives
+        if: matrix.dist
+        run: make dist VERSION=0.0.0-ci
+
+      - name: Smoke test
+        if: matrix.dist
+        run: |
+          set -euo pipefail
+          tar -xzf dist/bomcompare_0.0.0-ci_linux_amd64.tar.gz -C "$RUNNER_TEMP" bomcompare
+          "$RUNNER_TEMP/bomcompare" --version | grep -qx 'bomcompare 0.0.0-ci'
+          "$RUNNER_TEMP/bomcompare" --format summary testdata/source.spdx3.json testdata/binary.cdx.xml

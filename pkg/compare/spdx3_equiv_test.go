@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/seebom-labs/BOMHort/BOMcompare/pkg/sbom"
+	"github.com/seebom-labs/BOMcompare/pkg/sbom"
 )
 
 // TestSPDX3MatchesSPDX2Analysis verifies that the SPDX 3 JSON-LD fixture,

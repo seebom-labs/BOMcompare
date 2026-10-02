@@ -188,26 +188,26 @@ mikebom v0.1.0-alpha.47 describes SOURCE (e.g. go.sum/module graph) while syft v
 
 ## 11. Compliance — CISA 2026 Minimum Elements for a Software Bill of Materials
 
-Informational; not part of the weighted scorecard. `warn` = covered only by a declared unknown (NOASSERTION); `unverified` = cannot be judged from the document alone.
+Informational; not part of the weighted scorecard. `warn` = covered only by a declared unknown (NOASSERTION); `unverified` = cannot be judged from the document alone. Gate on these in CI with `--require-min-elements` (skip IDs via `--skip-min-elements`).
 
-| Element | Scope | mikebom v0.1.0-alpha.47 | syft v1.42.3 |
-|---------|-------|-----------------------|------------|
-| SBOM Author | document | ✅ mikebom contributors | ✅ Anchore, Inc |
-| Author Signature | document | ❔ not signed in-document | ❔ not signed in-document |
-| Data Format Name | document | ✅ SPDX | ✅ SPDX |
-| Data Format Version | document | ✅ SPDX-2.3 | ✅ SPDX-2.3 |
-| Generation Context | document | ❌ not declared (inferred: source) | ❌ not declared (inferred: binary) |
-| Timestamp | document | ✅ 2026-06-16T16:02:16Z | ✅ 2026-06-16T16:05:00Z |
-| Tool Name | document | ✅ mikebom-0.1.0-alpha.47 | ✅ syft-1.42.3 |
-| Tool Version | document | ✅ mikebom-0.1.0-alpha.47 | ✅ syft-1.42.3 |
-| SBOM Version | document | ✅ https://example.com/demo/source | ✅ https://example.com/demo/binary |
-| Component Producer | component | ✅ 4/4 (100.0%) | ⚠️ 0/3 (0.0%), 3 unknown |
-| Component Name | component | ✅ 4/4 (100.0%) | ✅ 3/3 (100.0%) |
-| Component Version | component | ✅ 4/4 (100.0%) | ✅ 3/3 (100.0%) |
-| Software Identifiers | component | ✅ 4/4 (100.0%) | ✅ 3/3 (100.0%) |
-| Component Hash (value + algorithm) | component | ❌ 3/4 (75.0%) | ❌ 1/3 (33.3%) |
-| License | component | ✅ 4/4 (100.0%) | ⚠️ 2/3 (66.7%), 1 unknown |
-| Dependency Relationship | component | ✅ 4/4 (100.0%) | ✅ 3/3 (100.0%) |
+| Element | ID | Scope | mikebom v0.1.0-alpha.47 | syft v1.42.3 |
+|---------|----|-------|-----------------------|------------|
+| SBOM Author | `author` | document | ✅ mikebom contributors | ✅ Anchore, Inc |
+| Author Signature | `signature` | document | ❔ not signed in-document | ❔ not signed in-document |
+| Data Format Name | `format-name` | document | ✅ SPDX | ✅ SPDX |
+| Data Format Version | `format-version` | document | ✅ SPDX-2.3 | ✅ SPDX-2.3 |
+| Generation Context | `generation-context` | document | ❌ not declared (inferred: source) | ❌ not declared (inferred: binary) |
+| Timestamp | `timestamp` | document | ✅ 2026-06-16T16:02:16Z | ✅ 2026-06-16T16:05:00Z |
+| Tool Name | `tool-name` | document | ✅ mikebom-0.1.0-alpha.47 | ✅ syft-1.42.3 |
+| Tool Version | `tool-version` | document | ✅ mikebom-0.1.0-alpha.47 | ✅ syft-1.42.3 |
+| SBOM Version | `sbom-version` | document | ✅ https://example.com/demo/source | ✅ https://example.com/demo/binary |
+| Component Producer | `producer` | component | ✅ 4/4 (100.0%) | ⚠️ 0/3 (0.0%), 3 unknown |
+| Component Name | `name` | component | ✅ 4/4 (100.0%) | ✅ 3/3 (100.0%) |
+| Component Version | `version` | component | ✅ 4/4 (100.0%) | ✅ 3/3 (100.0%) |
+| Software Identifiers | `identifiers` | component | ✅ 4/4 (100.0%) | ✅ 3/3 (100.0%) |
+| Component Hash (value + algorithm) | `hash` | component | ❌ 3/4 (75.0%) | ❌ 1/3 (33.3%) |
+| License | `license` | component | ✅ 4/4 (100.0%) | ⚠️ 2/3 (66.7%), 1 unknown |
+| Dependency Relationship | `dependencies` | component | ✅ 4/4 (100.0%) | ✅ 3/3 (100.0%) |
 
 **Elements fully met:** mikebom v0.1.0-alpha.47 **13/16**  ·  syft v1.42.3 **11/16**
 
@@ -227,4 +227,4 @@ Informational; not part of the weighted scorecard. `warn` = covered only by a de
 
 ---
 
-*Generated <DATE> by sbom-comparison — mikebom v0.1.0-alpha.47 vs syft v1.42.3*
+*Generated <DATE> by bomcompare — mikebom v0.1.0-alpha.47 vs syft v1.42.3*

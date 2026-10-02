@@ -4,7 +4,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/seebom-labs/BOMHort/BOMcompare/pkg/sbom"
+	"github.com/seebom-labs/BOMcompare/pkg/sbom"
 )
 
 // Completeness captures package coverage between the two SBOMs.

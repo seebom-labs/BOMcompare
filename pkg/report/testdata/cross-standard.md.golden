@@ -185,26 +185,26 @@ cyclonedx-gomod v1.9.0 describes SOURCE (e.g. go.sum/module graph) while syft v1
 
 ## 11. Compliance — CISA 2026 Minimum Elements for a Software Bill of Materials
 
-Informational; not part of the weighted scorecard. `warn` = covered only by a declared unknown (NOASSERTION); `unverified` = cannot be judged from the document alone.
+Informational; not part of the weighted scorecard. `warn` = covered only by a declared unknown (NOASSERTION); `unverified` = cannot be judged from the document alone. Gate on these in CI with `--require-min-elements` (skip IDs via `--skip-min-elements`).
 
-| Element | Scope | syft v1.42.3 | cyclonedx-gomod v1.9.0 |
-|---------|-------|------------|----------------------|
-| SBOM Author | document | ✅ Anchore, Inc | ❌ missing |
-| Author Signature | document | ❔ not signed in-document | ❔ not signed in-document |
-| Data Format Name | document | ✅ SPDX | ✅ CycloneDX |
-| Data Format Version | document | ✅ SPDX-2.3 | ✅ CycloneDX-1.5 |
-| Generation Context | document | ❌ not declared (inferred: binary) | ❌ not declared (inferred: source) |
-| Timestamp | document | ✅ 2026-06-16T16:05:00Z | ✅ 2026-06-16T16:10:00Z |
-| Tool Name | document | ✅ syft-1.42.3 | ✅ cyclonedx-gomod 1.9.0 |
-| Tool Version | document | ✅ syft-1.42.3 | ✅ cyclonedx-gomod 1.9.0 |
-| SBOM Version | document | ✅ https://example.com/demo/binary | ✅ urn:uuid:3e671687-395b-41f5-a30f-a58921a69b79#1 |
-| Component Producer | component | ⚠️ 0/3 (0.0%), 3 unknown | ❌ 2/3 (66.7%) |
-| Component Name | component | ✅ 3/3 (100.0%) | ✅ 3/3 (100.0%) |
-| Component Version | component | ✅ 3/3 (100.0%) | ✅ 3/3 (100.0%) |
-| Software Identifiers | component | ✅ 3/3 (100.0%) | ✅ 3/3 (100.0%) |
-| Component Hash (value + algorithm) | component | ❌ 1/3 (33.3%) | ❌ 1/3 (33.3%) |
-| License | component | ⚠️ 2/3 (66.7%), 1 unknown | ❌ 2/3 (66.7%) |
-| Dependency Relationship | component | ✅ 3/3 (100.0%) | ✅ 3/3 (100.0%) |
+| Element | ID | Scope | syft v1.42.3 | cyclonedx-gomod v1.9.0 |
+|---------|----|-------|------------|----------------------|
+| SBOM Author | `author` | document | ✅ Anchore, Inc | ❌ missing |
+| Author Signature | `signature` | document | ❔ not signed in-document | ❔ not signed in-document |
+| Data Format Name | `format-name` | document | ✅ SPDX | ✅ CycloneDX |
+| Data Format Version | `format-version` | document | ✅ SPDX-2.3 | ✅ CycloneDX-1.5 |
+| Generation Context | `generation-context` | document | ❌ not declared (inferred: binary) | ❌ not declared (inferred: source) |
+| Timestamp | `timestamp` | document | ✅ 2026-06-16T16:05:00Z | ✅ 2026-06-16T16:10:00Z |
+| Tool Name | `tool-name` | document | ✅ syft-1.42.3 | ✅ cyclonedx-gomod 1.9.0 |
+| Tool Version | `tool-version` | document | ✅ syft-1.42.3 | ✅ cyclonedx-gomod 1.9.0 |
+| SBOM Version | `sbom-version` | document | ✅ https://example.com/demo/binary | ✅ urn:uuid:3e671687-395b-41f5-a30f-a58921a69b79#1 |
+| Component Producer | `producer` | component | ⚠️ 0/3 (0.0%), 3 unknown | ❌ 2/3 (66.7%) |
+| Component Name | `name` | component | ✅ 3/3 (100.0%) | ✅ 3/3 (100.0%) |
+| Component Version | `version` | component | ✅ 3/3 (100.0%) | ✅ 3/3 (100.0%) |
+| Software Identifiers | `identifiers` | component | ✅ 3/3 (100.0%) | ✅ 3/3 (100.0%) |
+| Component Hash (value + algorithm) | `hash` | component | ❌ 1/3 (33.3%) | ❌ 1/3 (33.3%) |
+| License | `license` | component | ⚠️ 2/3 (66.7%), 1 unknown | ❌ 2/3 (66.7%) |
+| Dependency Relationship | `dependencies` | component | ✅ 3/3 (100.0%) | ✅ 3/3 (100.0%) |
 
 **Elements fully met:** syft v1.42.3 **11/16**  ·  cyclonedx-gomod v1.9.0 **10/16**
 
@@ -220,4 +220,4 @@ Informational; not part of the weighted scorecard. `warn` = covered only by a de
 
 ---
 
-*Generated <DATE> by sbom-comparison — syft v1.42.3 vs cyclonedx-gomod v1.9.0*
+*Generated <DATE> by bomcompare — syft v1.42.3 vs cyclonedx-gomod v1.9.0*

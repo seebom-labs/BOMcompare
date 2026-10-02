@@ -3,7 +3,7 @@ package compare
 import (
 	"strings"
 
-	"github.com/seebom-labs/BOMHort/BOMcompare/pkg/sbom"
+	"github.com/seebom-labs/BOMcompare/pkg/sbom"
 )
 
 // CISAMinimumElementsRef identifies the baseline checked by analyzeMinimumElements.
@@ -29,6 +29,8 @@ type MinimumElements struct {
 
 // MinElementRow is one minimum element evaluated on both SBOMs.
 type MinElementRow struct {
+	// ID is a stable, CLI-friendly identifier (e.g. "hash", "generation-context").
+	ID      string           `json:"id"`
 	Element string           `json:"element"`
 	Scope   string           `json:"scope"` // "document" or "component"
 	A       MinElementResult `json:"a"`
@@ -47,6 +49,7 @@ type MinElementResult struct {
 }
 
 type docCheck struct {
+	id      string
 	element string
 	eval    func(p *sbom.Parsed) MinElementResult
 }
@@ -54,21 +57,22 @@ type docCheck struct {
 // componentCheck classifies a package as having the element (present), stating
 // it as unknown (unknown), or omitting it.
 type componentCheck struct {
+	id      string
 	element string
 	eval    func(p *sbom.Parsed, pkg *sbom.NormalizedPackage, deps map[string]bool) (present, unknown bool)
 }
 
 var minDocChecks = []docCheck{
-	{"SBOM Author", func(p *sbom.Parsed) MinElementResult { return docValue(strings.Join(p.Meta.Authors, ", ")) }},
-	{"Author Signature", func(p *sbom.Parsed) MinElementResult {
+	{"author", "SBOM Author", func(p *sbom.Parsed) MinElementResult { return docValue(strings.Join(p.Meta.Authors, ", ")) }},
+	{"signature", "Author Signature", func(p *sbom.Parsed) MinElementResult {
 		if p.Meta.Signed {
 			return MinElementResult{Status: MinPass, Value: "enveloped signature"}
 		}
 		return MinElementResult{Status: MinUnverified, Value: "not signed in-document"}
 	}},
-	{"Data Format Name", func(p *sbom.Parsed) MinElementResult { return docValue(formatName(p.Format)) }},
-	{"Data Format Version", func(p *sbom.Parsed) MinElementResult { return docValue(p.Meta.SpecVersion) }},
-	{"Generation Context", func(p *sbom.Parsed) MinElementResult {
+	{"format-name", "Data Format Name", func(p *sbom.Parsed) MinElementResult { return docValue(formatName(p.Format)) }},
+	{"format-version", "Data Format Version", func(p *sbom.Parsed) MinElementResult { return docValue(p.Meta.SpecVersion) }},
+	{"generation-context", "Generation Context", func(p *sbom.Parsed) MinElementResult {
 		if p.Meta.Lifecycle != "" {
 			return docValue(p.Meta.Lifecycle)
 		}
@@ -78,38 +82,38 @@ var minDocChecks = []docCheck{
 		}
 		return r
 	}},
-	{"Timestamp", func(p *sbom.Parsed) MinElementResult { return docValue(p.Meta.Created) }},
-	{"Tool Name", func(p *sbom.Parsed) MinElementResult { return docValue(strings.Join(p.Meta.Tools, ", ")) }},
-	{"Tool Version", func(p *sbom.Parsed) MinElementResult { return docValue(strings.Join(p.Meta.ToolVersions, ", ")) }},
-	{"SBOM Version", func(p *sbom.Parsed) MinElementResult { return docValue(p.Meta.DocVersion) }},
+	{"timestamp", "Timestamp", func(p *sbom.Parsed) MinElementResult { return docValue(p.Meta.Created) }},
+	{"tool-name", "Tool Name", func(p *sbom.Parsed) MinElementResult { return docValue(strings.Join(p.Meta.Tools, ", ")) }},
+	{"tool-version", "Tool Version", func(p *sbom.Parsed) MinElementResult { return docValue(strings.Join(p.Meta.ToolVersions, ", ")) }},
+	{"sbom-version", "SBOM Version", func(p *sbom.Parsed) MinElementResult { return docValue(p.Meta.DocVersion) }},
 }
 
 var minComponentChecks = []componentCheck{
-	{"Component Producer", func(p *sbom.Parsed, pkg *sbom.NormalizedPackage, _ map[string]bool) (bool, bool) {
+	{"producer", "Component Producer", func(p *sbom.Parsed, pkg *sbom.NormalizedPackage, _ map[string]bool) (bool, bool) {
 		if resolved(pkg.Supplier) || resolved(pkg.Originator) {
 			return true, false
 		}
 		return false, declaredUnknown(p, pkg.Supplier) || declaredUnknown(p, pkg.Originator)
 	}},
-	{"Component Name", func(_ *sbom.Parsed, pkg *sbom.NormalizedPackage, _ map[string]bool) (bool, bool) {
+	{"name", "Component Name", func(_ *sbom.Parsed, pkg *sbom.NormalizedPackage, _ map[string]bool) (bool, bool) {
 		return strings.TrimSpace(pkg.Name) != "", false
 	}},
-	{"Component Version", func(p *sbom.Parsed, pkg *sbom.NormalizedPackage, _ map[string]bool) (bool, bool) {
+	{"version", "Component Version", func(p *sbom.Parsed, pkg *sbom.NormalizedPackage, _ map[string]bool) (bool, bool) {
 		return resolved(pkg.Version), declaredUnknown(p, pkg.Version)
 	}},
-	{"Software Identifiers", func(_ *sbom.Parsed, pkg *sbom.NormalizedPackage, _ map[string]bool) (bool, bool) {
+	{"identifiers", "Software Identifiers", func(_ *sbom.Parsed, pkg *sbom.NormalizedPackage, _ map[string]bool) (bool, bool) {
 		return pkg.PURL != "" || len(pkg.CPEs) > 0 || len(pkg.OtherIDs) > 0, false
 	}},
-	{"Component Hash (value + algorithm)", func(_ *sbom.Parsed, pkg *sbom.NormalizedPackage, _ map[string]bool) (bool, bool) {
+	{"hash", "Component Hash (value + algorithm)", func(_ *sbom.Parsed, pkg *sbom.NormalizedPackage, _ map[string]bool) (bool, bool) {
 		return pkg.ChecksumNum > 0, false
 	}},
-	{"License", func(p *sbom.Parsed, pkg *sbom.NormalizedPackage, _ map[string]bool) (bool, bool) {
+	{"license", "License", func(p *sbom.Parsed, pkg *sbom.NormalizedPackage, _ map[string]bool) (bool, bool) {
 		if effectiveLicense(pkg) != "" {
 			return true, false
 		}
 		return false, declaredUnknown(p, pkg.LicenseConcluded) || declaredUnknown(p, pkg.LicenseDeclared)
 	}},
-	{"Dependency Relationship", func(_ *sbom.Parsed, pkg *sbom.NormalizedPackage, deps map[string]bool) (bool, bool) {
+	{"dependencies", "Dependency Relationship", func(_ *sbom.Parsed, pkg *sbom.NormalizedPackage, deps map[string]bool) (bool, bool) {
 		return deps[pkg.SPDXID], false
 	}},
 }
@@ -117,11 +121,12 @@ var minComponentChecks = []componentCheck{
 func analyzeMinimumElements(a, b *sbom.Parsed) MinimumElements {
 	m := MinimumElements{Reference: CISAMinimumElementsRef}
 	for _, c := range minDocChecks {
-		m.Rows = append(m.Rows, MinElementRow{Element: c.element, Scope: "document", A: c.eval(a), B: c.eval(b)})
+		m.Rows = append(m.Rows, MinElementRow{ID: c.id, Element: c.element, Scope: "document", A: c.eval(a), B: c.eval(b)})
 	}
 	depsA, depsB := dependencyParticipants(a), dependencyParticipants(b)
 	for _, c := range minComponentChecks {
 		m.Rows = append(m.Rows, MinElementRow{
+			ID:      c.id,
 			Element: c.element,
 			Scope:   "component",
 			A:       componentCoverage(a, depsA, c),
@@ -206,4 +211,36 @@ func formatName(format string) string {
 		return "CycloneDX"
 	}
 	return ""
+}
+
+// MinElementIDs lists the IDs of all checked minimum elements, in report order.
+func MinElementIDs() []string {
+	ids := make([]string, 0, len(minDocChecks)+len(minComponentChecks))
+	for _, c := range minDocChecks {
+		ids = append(ids, c.id)
+	}
+	for _, c := range minComponentChecks {
+		ids = append(ids, c.id)
+	}
+	return ids
+}
+
+// Failing returns the rows that side ("A" or "B") fails, ignoring the element
+// IDs in skip. Only MinFail counts: declared unknowns (warn) satisfy the CISA
+// baseline, and unverifiable signatures cannot be judged from the document.
+func (m MinimumElements) Failing(side string, skip map[string]bool) []MinElementRow {
+	var out []MinElementRow
+	for _, r := range m.Rows {
+		if skip[r.ID] {
+			continue
+		}
+		res := r.A
+		if side == "B" {
+			res = r.B
+		}
+		if res.Status == MinFail {
+			out = append(out, r)
+		}
+	}
+	return out
 }

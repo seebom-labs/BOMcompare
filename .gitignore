@@ -1,5 +1,5 @@
 # Binaries
-/sbom-comparison
+/bomcompare
 *.exe
 *.out
 *.test

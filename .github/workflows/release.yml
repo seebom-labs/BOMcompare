@@ -1,0 +1,153 @@
+name: Release
+
+# Push a tag to release:
+#
+#   vX.Y.Z         GitHub Release
+#   vX.Y.Z-rc.N    GitHub pre-release (also -alpha.N / -beta.N)
+#
+# Publishes cross-compiled archives (linux/darwin/windows × amd64/arm64), a
+# checksums file signed with cosign (keyless), SLSA build provenance for every
+# archive and an SPDX SBOM of bomcompare itself. See README "Releasing".
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Build & Publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write       # Create the GitHub Release
+      id-token: write       # Keyless cosign signing + provenance
+      attestations: write   # GitHub artifact attestations
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Resolve and validate version
+        id: version
+        run: |
+          set -euo pipefail
+          VERSION="${GITHUB_REF_NAME#v}"
+          if ! printf '%s' "$VERSION" | grep -Eq '^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-(rc|alpha|beta)\.[1-9][0-9]*)?$'; then
+            echo "::error::'$GITHUB_REF_NAME' is not a release tag. Expected vX.Y.Z or vX.Y.Z-rc.N (also -alpha.N / -beta.N)."
+            exit 1
+          fi
+          # Release only what is on main, i.e. what CI and review have seen.
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+            echo "::error::$GITHUB_REF_NAME ($GITHUB_SHA) is not on main."
+            exit 1
+          fi
+          PRERELEASE=false
+          case "$VERSION" in *-*) PRERELEASE=true ;; esac
+          {
+            echo "version=$VERSION"
+            echo "prerelease=$PRERELEASE"
+          } >> "$GITHUB_OUTPUT"
+
+      # Release binaries are built with the current stable Go so they ship the
+      # latest standard-library security fixes; go.mod only states the minimum.
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: stable
+          cache: false # stdlib only, nothing to cache
+
+      - name: Lint and test
+        run: make lint test
+
+      - name: Build archives
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: make dist VERSION="$VERSION"
+
+      - name: Generate SBOM
+        uses: anchore/sbom-action@3ad7283483fc7af8ff2b4ea19663c2d5ca935e26 # v0.24.2.18.0.24.2
+        with:
+          path: .
+          format: spdx-json
+          output-file: dist/bomcompare_${{ steps.version.outputs.version }}.spdx.json
+          upload-artifact: false
+          upload-release-assets: false
+
+      - name: Add SBOM to checksums
+        working-directory: dist
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: sha256sum "bomcompare_${VERSION}.spdx.json" >> checksums.txt
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+
+      - name: Sign checksums
+        working-directory: dist
+        run: cosign sign-blob --yes --bundle checksums.txt.sigstore.json checksums.txt
+
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-checksums: dist/checksums.txt
+
+      - name: Write release notes
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          PRERELEASE: ${{ steps.version.outputs.prerelease }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          {
+            if [ "$PRERELEASE" = "true" ]; then
+              printf '> [!WARNING]\n> **Pre-release** `v%s` — for testing.\n\n' "$VERSION"
+            fi
+            cat <<NOTES
+          ## Install
+
+          Download the archive for your platform below, or:
+
+          \`\`\`bash
+          go install github.com/${GITHUB_REPOSITORY}/cmd/bomcompare@v${VERSION}
+          \`\`\`
+
+          ## Verify
+
+          \`\`\`bash
+          # Checksums signature (keyless, cosign v3+)
+          cosign verify-blob \\
+            --bundle checksums.txt.sigstore.json \\
+            --certificate-identity "https://github.com/${GITHUB_WORKFLOW_REF}" \\
+            --certificate-oidc-issuer https://token.actions.githubusercontent.com \\
+            checksums.txt
+          sha256sum --ignore-missing -c checksums.txt
+
+          # SLSA build provenance
+          gh attestation verify bomcompare_${VERSION}_linux_amd64.tar.gz --repo ${GITHUB_REPOSITORY}
+          \`\`\`
+
+          An SPDX SBOM of bomcompare itself is attached as \`bomcompare_${VERSION}.spdx.json\`.
+
+          NOTES
+            gh api "repos/$GITHUB_REPOSITORY/releases/generate-notes" -f "tag_name=$GITHUB_REF_NAME" --jq .body
+          } > release-notes.md
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v2.3.2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: bomcompare ${{ steps.version.outputs.version }}
+          body_path: release-notes.md
+          prerelease: ${{ steps.version.outputs.prerelease }}
+          files: |
+            dist/*.tar.gz
+            dist/*.zip
+            dist/*.spdx.json
+            dist/checksums.txt
+            dist/checksums.txt.sigstore.json

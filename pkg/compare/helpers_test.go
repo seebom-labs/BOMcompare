@@ -3,7 +3,7 @@ package compare
 import (
 	"testing"
 
-	"github.com/seebom-labs/BOMHort/BOMcompare/pkg/sbom"
+	"github.com/seebom-labs/BOMcompare/pkg/sbom"
 )
 
 func TestNormVersion(t *testing.T) {

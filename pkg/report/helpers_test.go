@@ -4,8 +4,8 @@ import (
 	"testing"
 	"unicode/utf8"
 
-	"github.com/seebom-labs/BOMHort/BOMcompare/pkg/compare"
-	"github.com/seebom-labs/BOMHort/BOMcompare/pkg/sbom"
+	"github.com/seebom-labs/BOMcompare/pkg/compare"
+	"github.com/seebom-labs/BOMcompare/pkg/sbom"
 )
 
 func TestTruncRuneSafe(t *testing.T) {

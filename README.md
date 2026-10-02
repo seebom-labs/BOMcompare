@@ -1,8 +1,10 @@
 # BOMcompare
 
-> Part of **[BOMHort](https://github.com/seebom-labs/BOMHort)** — this tool lives
-> in the BOMHort monorepo under [`BOMcompare`](https://github.com/seebom-labs/BOMHort/tree/main/BOMcompare),
-> which is its upstream. Module path: `github.com/seebom-labs/BOMHort/BOMcompare`.
+[![CI](https://github.com/seebom-labs/BOMcompare/actions/workflows/ci.yml/badge.svg)](https://github.com/seebom-labs/BOMcompare/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/seebom-labs/BOMcompare?include_prereleases&sort=semver)](https://github.com/seebom-labs/BOMcompare/releases)
+
+> A [seebom-labs](https://github.com/seebom-labs) tool, companion to
+> **[BOMHort](https://github.com/seebom-labs/BOMHort)**.
 
 A single-binary Go CLI that compares two SBOMs — **SPDX** (2.x JSON or
 tag-value, 3.0 JSON-LD) or **CycloneDX** (JSON or XML, 1.4–1.7) — and produces a
@@ -81,7 +83,7 @@ compiled artifact) lists only what is linked in. Tools also disagree on *where*
 they put data (e.g. `licenseDeclared` vs `licenseConcluded`), how they format
 PURLs, and whether they attribute suppliers at all.
 
-`sbom-comparison` makes those differences explicit and classifies them using the
+`bomcompare` makes those differences explicit and classifies them using the
 Lieberman finding framework, so you can:
 
 - diff two tools on the same target ("mikebom vs syft"),
@@ -91,24 +93,43 @@ Lieberman finding framework, so you can:
 
 ## Install
 
-```bash
-go install github.com/seebom-labs/BOMHort/BOMcompare@latest
-```
-
-This installs a `BOMcompare` binary. Or build from source:
+**Pre-built binaries** (Linux, macOS, Windows; amd64 and arm64) are attached to
+every [GitHub Release](https://github.com/seebom-labs/BOMcompare/releases):
 
 ```bash
-git clone https://github.com/seebom-labs/BOMHort
-cd BOMHort/BOMcompare
-go build -o sbom-comparison .
+VERSION=0.1.0   # see the releases page for the latest
+OS=linux        # linux | darwin   (windows: download the .zip)
+ARCH=amd64      # amd64 | arm64
+curl -sSLO "https://github.com/seebom-labs/BOMcompare/releases/download/v${VERSION}/bomcompare_${VERSION}_${OS}_${ARCH}.tar.gz"
+tar -xzf "bomcompare_${VERSION}_${OS}_${ARCH}.tar.gz" bomcompare
+sudo install bomcompare /usr/local/bin/
+bomcompare --version
 ```
 
-Requires Go 1.23+. No dependencies beyond the standard library.
+Each release includes a `checksums.txt` signed with cosign (keyless), SLSA build
+provenance for every archive and an SPDX SBOM of bomcompare itself. The
+verification commands are in the release notes.
+
+**With Go** (1.23+):
+
+```bash
+go install github.com/seebom-labs/BOMcompare/cmd/bomcompare@latest
+```
+
+**From source:**
+
+```bash
+git clone https://github.com/seebom-labs/BOMcompare
+cd BOMcompare
+make build        # → ./bomcompare
+```
+
+No dependencies beyond the Go standard library.
 
 ## Usage
 
 ```bash
-sbom-comparison [flags] <sbom-a> <sbom-b>
+bomcompare [flags] <sbom-a> <sbom-b>
 ```
 
 Inputs can be any supported format (SPDX JSON/tag-value/3.0 JSON-LD, CycloneDX JSON/XML) and
@@ -124,6 +145,8 @@ the two files need not be the same format.
 | `-o <file>` | stdout | Write the report to a file |
 | `--exit-on-diff` | `false` | Exit with code **2** if **significant** differences are found (CI gate) |
 | `--diff-threshold <n>` | `1` | Minimum number of runtime-unique packages that counts as significant |
+| `--require-min-elements <a\|b\|both>` | — | Exit with code **3** unless the given SBOM(s) meet the CISA 2026 minimum elements |
+| `--skip-min-elements <ids>` | — | Comma-separated minimum-element IDs to ignore for `--require-min-elements` |
 | `--version` | — | Print version and exit |
 
 ### Output formats
@@ -139,23 +162,46 @@ the two files need not be the same format.
 
 ```bash
 # Full markdown report (same format)
-sbom-comparison mikebom.spdx.json syft.spdx.json
+bomcompare mikebom.spdx.json syft.spdx.json
 
 # Cross-format: CycloneDX vs SPDX
-sbom-comparison syft.cdx.json mikebom.spdx.json
+bomcompare syft.cdx.json mikebom.spdx.json
 
 # SPDX tag-value vs CycloneDX XML
-sbom-comparison app.spdx app.cdx.xml
+bomcompare app.spdx app.cdx.xml
 
 # Just the scorecard
-sbom-comparison --format summary mikebom.spdx.json syft.spdx.json
+bomcompare --format summary mikebom.spdx.json syft.spdx.json
 
 # Machine-readable output to a file
-sbom-comparison --format json -o report.json a.spdx.json b.cdx.json
+bomcompare --format json -o report.json a.spdx.json b.cdx.json
 
 # CI gate: fail the build on a significant regression
-sbom-comparison --exit-on-diff old-release.spdx.json new-release.spdx.json
+bomcompare --exit-on-diff old-release.spdx.json new-release.spdx.json
+
+# CI gate: the new SBOM must meet the CISA 2026 minimum elements
+# (component hashes are not required here)
+bomcompare --require-min-elements b --skip-min-elements hash old.spdx.json new.cdx.json
 ```
+
+### Gating on CISA 2026 minimum elements
+
+`--require-min-elements a|b|both` fails the run with exit code **3** when a
+checked SBOM misses a minimum element. The failing element IDs are printed to
+stderr, for example:
+
+```
+minimum elements not met by B (syft v1.42.3): generation-context, hash
+```
+
+- Only `fail` counts. A declared unknown (`warn`, SPDX `NOASSERTION`) satisfies
+  the CISA baseline. An `unverified` signature cannot be judged from the
+  document, so it never fails the gate.
+- `--skip-min-elements` takes these IDs: `author`, `signature`, `format-name`,
+  `format-version`, `generation-context`, `timestamp`, `tool-name`,
+  `tool-version`, `sbom-version`, `producer`, `name`, `version`,
+  `identifiers`, `hash`, `license`, `dependencies`. The IDs are also shown in
+  the report's minimum-elements table.
 
 ## Exit codes
 
@@ -164,6 +210,9 @@ sbom-comparison --exit-on-diff old-release.spdx.json new-release.spdx.json
 | `0` | Success (no significant differences, or `--exit-on-diff` not set) |
 | `1` | Error (bad arguments, unreadable or unrecognized SBOM) |
 | `2` | Significant differences found **and** `--exit-on-diff` was set |
+| `3` | Minimum elements not met **and** `--require-min-elements` was set |
+
+If both gates trip, `2` wins.
 
 A version mismatch on a common package is *always* significant. A large
 package-count delta that is explained by a **source-vs-binary** scope difference
@@ -249,11 +298,37 @@ SBOM vs Binary SBOM" note explaining that the package delta is expected.
 ## Development
 
 ```bash
-go build ./...   # build
-go vet ./...     # static checks
-go test ./...    # run tests
-gofmt -l .       # formatting (should print nothing)
+make              # lint + test + build
+make lint         # gofmt + go vet
+make test         # go test -race ./...
+make build        # ./bomcompare (VERSION=... to stamp a version)
+make golden       # regenerate report golden files
+make dist VERSION=0.1.0   # cross-compiled release archives + checksums in dist/
 ```
+
+CI (`.github/workflows/ci.yml`) runs lint and tests on the go.mod minimum and
+on the current stable Go. On stable it also cross-compiles and smoke-tests a
+release build.
+
+### Releasing
+
+Releases come from tags on `main`:
+
+```bash
+git tag -s v0.1.0 -m "bomcompare 0.1.0"    # or v0.1.0-rc.1 for a pre-release
+git push upstream v0.1.0
+```
+
+`.github/workflows/release.yml` then does the following:
+
+1. Validates the tag (`vX.Y.Z` or `vX.Y.Z-rc|alpha|beta.N`, on `main`).
+2. Runs lint and tests.
+3. Builds reproducible archives with `hack/dist.sh` using the current stable
+   Go, so the binaries ship the latest standard-library fixes.
+4. Generates an SPDX SBOM of bomcompare itself.
+5. Signs `checksums.txt` with cosign (keyless) and attests SLSA build
+   provenance for every archive.
+6. Publishes the GitHub Release, as a pre-release for `-rc|alpha|beta` tags.
 
 ### Golden tests
 
@@ -291,8 +366,8 @@ Test fixtures live in `testdata/`:
 ## Project layout
 
 ```
-BOMcompare/                 # subproject of github.com/seebom-labs/BOMHort
-├── main.go                 # CLI entry point, flags, exit codes
+BOMcompare/                 # module github.com/seebom-labs/BOMcompare
+├── cmd/bomcompare/         # CLI entry point, flags, exit codes
 ├── pkg/
 │   ├── sbom/               # format detection + parse/normalize
 │   │   ├── spdx.go             # SPDX 2.3 JSON types
@@ -305,7 +380,10 @@ BOMcompare/                 # subproject of github.com/seebom-labs/BOMHort
 │   ├── compare/            # comparison engine, finding classification,
 │   │                       #   CISA minimum elements (minimum.go)
 │   └── report/             # markdown / json / summary renderers (+ golden tests)
-└── testdata/               # SPDX + CycloneDX fixtures used by tests
+├── testdata/               # SPDX + CycloneDX fixtures used by tests
+├── hack/dist.sh            # reproducible cross-compiled release archives
+├── Makefile
+└── .github/                # CI, release workflow, Dependabot
 ```
 
 ## License

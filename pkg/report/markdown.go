@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/seebom-labs/BOMHort/BOMcompare/pkg/compare"
+	"github.com/seebom-labs/BOMcompare/pkg/compare"
 )
 
 // RenderMarkdown renders the full human-readable comparison report, structured
@@ -55,7 +55,7 @@ func RenderMarkdown(r *compare.Report) string {
 	writeRecommendations(&b, r)
 
 	w("---\n\n")
-	w("*Generated %s by sbom-comparison — %s vs %s*\n",
+	w("*Generated %s by bomcompare — %s vs %s*\n",
 		time.Now().Format("2006-01-02"), r.LabelA, r.LabelB)
 	return b.String()
 }
@@ -353,11 +353,12 @@ func writeMinimumElements(b *strings.Builder, r *compare.Report) {
 	m := r.MinimumElements
 	w("## 11. Compliance — %s\n\n", m.Reference)
 	w("Informational; not part of the weighted scorecard. `warn` = covered only by a declared unknown (NOASSERTION); ")
-	w("`unverified` = cannot be judged from the document alone.\n\n")
-	w("| Element | Scope | %s | %s |\n", r.LabelA, r.LabelB)
-	w("|---------|-------|%s|%s|\n", dashes(r.LabelA), dashes(r.LabelB))
+	w("`unverified` = cannot be judged from the document alone. ")
+	w("Gate on these in CI with `--require-min-elements` (skip IDs via `--skip-min-elements`).\n\n")
+	w("| Element | ID | Scope | %s | %s |\n", r.LabelA, r.LabelB)
+	w("|---------|----|-------|%s|%s|\n", dashes(r.LabelA), dashes(r.LabelB))
 	for _, row := range m.Rows {
-		w("| %s | %s | %s | %s |\n", row.Element, row.Scope, minCell(row.Scope, row.A), minCell(row.Scope, row.B))
+		w("| %s | `%s` | %s | %s | %s |\n", row.Element, row.ID, row.Scope, minCell(row.Scope, row.A), minCell(row.Scope, row.B))
 	}
 	w("\n**Elements fully met:** %s **%d/%d**  ·  %s **%d/%d**\n\n",
 		r.LabelA, m.PassedA, m.Total, r.LabelB, m.PassedB, m.Total)

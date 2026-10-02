@@ -5,7 +5,7 @@ package report
 import (
 	"strings"
 
-	"github.com/seebom-labs/BOMHort/BOMcompare/pkg/compare"
+	"github.com/seebom-labs/BOMcompare/pkg/compare"
 )
 
 // Format enumerates the supported output formats.

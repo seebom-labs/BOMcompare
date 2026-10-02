@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/seebom-labs/BOMHort/BOMcompare/pkg/sbom"
+	"github.com/seebom-labs/BOMcompare/pkg/sbom"
 )
 
 func minRow(t *testing.T, m MinimumElements, element string) MinElementRow {
@@ -140,5 +140,49 @@ func TestMinimumElementsDeclaredUnknownWarns(t *testing.T) {
 	p.Format = sbom.FormatCycloneDXJSON
 	if got := componentCoverage(p, nil, lic); got.Status != MinFail || got.Unknown != 0 {
 		t.Errorf("CycloneDX license coverage = %+v, want fail without unknowns", got)
+	}
+}
+
+func TestMinElementIDsUniqueAndInReport(t *testing.T) {
+	ids := MinElementIDs()
+	seen := map[string]bool{}
+	for _, id := range ids {
+		if id == "" || seen[id] {
+			t.Errorf("empty or duplicate ID %q", id)
+		}
+		seen[id] = true
+	}
+	r := Run(load(t, "../../testdata/source.spdx.json"), load(t, "../../testdata/binary.spdx.json"), DefaultOptions())
+	if len(r.MinimumElements.Rows) != len(ids) {
+		t.Fatalf("rows = %d, ids = %d", len(r.MinimumElements.Rows), len(ids))
+	}
+	for i, row := range r.MinimumElements.Rows {
+		if row.ID != ids[i] {
+			t.Errorf("row %d ID = %q, want %q", i, row.ID, ids[i])
+		}
+	}
+}
+
+func TestMinimumElementsFailing(t *testing.T) {
+	m := MinimumElements{Rows: []MinElementRow{
+		{ID: "hash", A: MinElementResult{Status: MinFail}, B: MinElementResult{Status: MinPass}},
+		{ID: "license", A: MinElementResult{Status: MinWarn}, B: MinElementResult{Status: MinFail}},
+		{ID: "signature", A: MinElementResult{Status: MinUnverified}, B: MinElementResult{Status: MinUnverified}},
+	}}
+	ids := func(rows []MinElementRow) []string {
+		var out []string
+		for _, r := range rows {
+			out = append(out, r.ID)
+		}
+		return out
+	}
+	if got := ids(m.Failing("A", nil)); len(got) != 1 || got[0] != "hash" {
+		t.Errorf("Failing(A) = %v, want [hash] (warn/unverified must not fail)", got)
+	}
+	if got := ids(m.Failing("B", nil)); len(got) != 1 || got[0] != "license" {
+		t.Errorf("Failing(B) = %v, want [license]", got)
+	}
+	if got := m.Failing("A", map[string]bool{"hash": true}); len(got) != 0 {
+		t.Errorf("Failing(A, skip hash) = %v, want none", ids(got))
 	}
 }

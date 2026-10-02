@@ -5,7 +5,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/seebom-labs/BOMHort/BOMcompare/pkg/sbom"
+	"github.com/seebom-labs/BOMcompare/pkg/sbom"
 )
 
 // DepGraph summarizes the dependency relationship graph for one comparison.

@@ -3,7 +3,7 @@ package compare
 import (
 	"strings"
 
-	"github.com/seebom-labs/BOMHort/BOMcompare/pkg/sbom"
+	"github.com/seebom-labs/BOMcompare/pkg/sbom"
 )
 
 // FindingType enumerates the Lieberman-framework finding categories.

@@ -3,7 +3,7 @@ package report
 import (
 	"encoding/json"
 
-	"github.com/seebom-labs/BOMHort/BOMcompare/pkg/compare"
+	"github.com/seebom-labs/BOMcompare/pkg/compare"
 )
 
 // RenderJSON serializes the full structured report as indented JSON.

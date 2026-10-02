@@ -4,7 +4,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/seebom-labs/BOMHort/BOMcompare/pkg/sbom"
+	"github.com/seebom-labs/BOMcompare/pkg/sbom"
 )
 
 // Licenses captures license resolution rates per SBOM and a cross-comparison of

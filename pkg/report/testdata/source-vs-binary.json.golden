@@ -222,6 +222,7 @@
     "reference": "CISA 2026 Minimum Elements for a Software Bill of Materials",
     "rows": [
       {
+        "id": "author",
         "element": "SBOM Author",
         "scope": "document",
         "a": {
@@ -234,6 +235,7 @@
         }
       },
       {
+        "id": "signature",
         "element": "Author Signature",
         "scope": "document",
         "a": {
@@ -246,6 +248,7 @@
         }
       },
       {
+        "id": "format-name",
         "element": "Data Format Name",
         "scope": "document",
         "a": {
@@ -258,6 +261,7 @@
         }
       },
       {
+        "id": "format-version",
         "element": "Data Format Version",
         "scope": "document",
         "a": {
@@ -270,6 +274,7 @@
         }
       },
       {
+        "id": "generation-context",
         "element": "Generation Context",
         "scope": "document",
         "a": {
@@ -282,6 +287,7 @@
         }
       },
       {
+        "id": "timestamp",
         "element": "Timestamp",
         "scope": "document",
         "a": {
@@ -294,6 +300,7 @@
         }
       },
       {
+        "id": "tool-name",
         "element": "Tool Name",
         "scope": "document",
         "a": {
@@ -306,6 +313,7 @@
         }
       },
       {
+        "id": "tool-version",
         "element": "Tool Version",
         "scope": "document",
         "a": {
@@ -318,6 +326,7 @@
         }
       },
       {
+        "id": "sbom-version",
         "element": "SBOM Version",
         "scope": "document",
         "a": {
@@ -330,6 +339,7 @@
         }
       },
       {
+        "id": "producer",
         "element": "Component Producer",
         "scope": "component",
         "a": {
@@ -345,6 +355,7 @@
         }
       },
       {
+        "id": "name",
         "element": "Component Name",
         "scope": "component",
         "a": {
@@ -361,6 +372,7 @@
         }
       },
       {
+        "id": "version",
         "element": "Component Version",
         "scope": "component",
         "a": {
@@ -377,6 +389,7 @@
         }
       },
       {
+        "id": "identifiers",
         "element": "Software Identifiers",
         "scope": "component",
         "a": {
@@ -393,6 +406,7 @@
         }
       },
       {
+        "id": "hash",
         "element": "Component Hash (value + algorithm)",
         "scope": "component",
         "a": {
@@ -409,6 +423,7 @@
         }
       },
       {
+        "id": "license",
         "element": "License",
         "scope": "component",
         "a": {
@@ -426,6 +441,7 @@
         }
       },
       {
+        "id": "dependencies",
         "element": "Dependency Relationship",
         "scope": "component",
         "a": {

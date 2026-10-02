@@ -1,6 +1,6 @@
 package compare
 
-import "github.com/seebom-labs/BOMHort/BOMcompare/pkg/sbom"
+import "github.com/seebom-labs/BOMcompare/pkg/sbom"
 
 // Versions reports version agreement across the common package set.
 type Versions struct {

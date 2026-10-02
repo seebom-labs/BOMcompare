@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/seebom-labs/BOMHort/BOMcompare/pkg/compare"
+	"github.com/seebom-labs/BOMcompare/pkg/compare"
 )
 
 // RenderSummary produces just the scorecard table plus the composite score line.

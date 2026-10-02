@@ -7,8 +7,8 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/seebom-labs/BOMHort/BOMcompare/pkg/compare"
-	"github.com/seebom-labs/BOMHort/BOMcompare/pkg/sbom"
+	"github.com/seebom-labs/BOMcompare/pkg/compare"
+	"github.com/seebom-labs/BOMcompare/pkg/sbom"
 )
 
 // updateGolden regenerates the golden files instead of asserting against them.

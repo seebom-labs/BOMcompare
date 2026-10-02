@@ -5,7 +5,7 @@
 package compare
 
 import (
-	"github.com/seebom-labs/BOMHort/BOMcompare/pkg/sbom"
+	"github.com/seebom-labs/BOMcompare/pkg/sbom"
 )
 
 // Report is the full structured comparison result. It is rendered by the report
